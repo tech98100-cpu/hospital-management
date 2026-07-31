@@ -48,6 +48,7 @@ const authLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: { error: "Too many attempts. Please try again later." },
 });
 app.use("/api/auth/login", authLimiter);
@@ -59,6 +60,8 @@ const apiLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+    validate: { trustProxy: false, xForwardedForHeader: false },
+
 });
 app.use("/api", apiLimiter);
 

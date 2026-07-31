@@ -22,6 +22,33 @@ const auditLogRoutes = require("./routes/auditlogs");
 
 const app = express();
 
+// Reuse a single MongoDB connection across warm serverless invocations, and make
+// every request wait for it — this avoids the "buffering timed out after 10000ms"
+// error that happens on Vercel when a request arrives before the connection is ready.
+let dbConnectionPromise = null;
+function connectDB() {
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose
+      .connect(process.env.MONGO_URI)
+      .then(() => console.log("Connected to MongoDB"))
+      .catch((err) => {
+        dbConnectionPromise = null; // allow retrying on the next request
+        throw err;
+      });
+  }
+  return dbConnectionPromise;
+}
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("MongoDB connection error:", err.message);
+    res.status(503).json({ error: "Database temporarily unavailable, please try again" });
+  }
+});
+
 // Behind a proxy (Railway/Vercel) — needed for correct req.ip and rate limiting
 app.set("trust proxy", 1);
 
@@ -60,8 +87,7 @@ const apiLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-    validate: { trustProxy: false, xForwardedForHeader: false },
-
+  validate: { trustProxy: false, xForwardedForHeader: false },
 });
 app.use("/api", apiLimiter);
 
@@ -96,16 +122,6 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.status || 500).json({ error: "Something went wrong on our end" });
 });
-
-// Reuse the MongoDB connection across warm serverless invocations
-let isConnected = false;
-async function connectDB() {
-  if (isConnected || mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGO_URI);
-  isConnected = true;
-  console.log("Connected to MongoDB");
-}
-connectDB().catch(err => console.error("MongoDB connection error:", err.message));
 
 // Locally: start a normal server. On Vercel: export the app as a serverless function.
 if (require.main === module) {

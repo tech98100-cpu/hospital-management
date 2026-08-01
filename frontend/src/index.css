@@ -217,7 +217,9 @@ a { cursor: pointer; }
   background: linear-gradient(135deg, var(--blue-light) 0%, var(--teal-light) 100%);
   color: var(--blue); font-weight: 800; font-size: 18px;
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
+.doctor-avatar-photo img { width: 100%; height: 100%; object-fit: cover; }
 .doctor-name { font-weight: 700; font-size: 14.5px; }
 .doctor-specialty { font-size: 12px; color: var(--text-faint); margin: 2px 0 8px; }
 .doctor-rating { font-size: 11.5px; color: var(--amber); font-weight: 700; margin-bottom: 14px; }

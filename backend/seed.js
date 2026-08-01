@@ -78,7 +78,7 @@ async function seed() {
     { name: "Nurse Farah Nasir", department: "Pediatrics", shift: "evening" },
   ];
   for (const n of nurseSeed) {
-    const email = n.name.toLowerCase().replace(/[^a-z]+/g, ".") + "@healthcareplus.demo";
+    const email = n.name.replace("Nurse ", "").toLowerCase().replace(/[^a-z]+/g, ".") + "@healthcareplus.demo";
     const user = await User.create({ name: n.name, email, passwordHash, role: "nurse" });
     await Nurse.create({ user: user._id, name: n.name, department: n.department, shift: n.shift });
   }
